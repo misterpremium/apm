@@ -6,7 +6,7 @@ restore='\e[0m';
 
 if [ $# -eq 0 ]; then
 	echo "USAGE"
-	echo "apm.sh stop|start|status|restart all||(elasticsearch kibana apm-server  logstash)"
+	echo "apm.sh stop|start|status|restart all||(elasticsearch kibana apm-server  logstash filebeat)"
 	exit $?
 fi
 
@@ -14,18 +14,16 @@ action=$1
 OPTION=$2;
 epath="/opt/elasticsearch-6.4.2"
 if [ $OPTION = "all" ]; then
-        OPTION=( elasticsearch kibana apm-server logstash )
+        OPTION=( elasticsearch kibana apm-server logstash filebeat )
 fi
 
 startelastic (){
 	cd $epath
-    	nohup ./bin/elasticsearch -d -p pid  &
-#    systemctl start elasticsearch
+    nohup ./bin/elasticsearch -d -p pid  &
 }
 stopelastic() {
 	cd $epath
 	kill -9 $( cat pid)
-	#systemctl stop elasticsearch
 }
 statuselastic(){
 	cd $epath
@@ -35,7 +33,6 @@ statuselastic(){
 	else
 		return 0
 	fi
-	#systemctl status elasticsearch
 }
 startkibana(){
 	sudo /etc/init.d/kibana start
@@ -63,6 +60,17 @@ stoplogstash(){
 }
 statuslogstash(){
 	systemctl status logstash
+}
+
+
+startfilebeat(){
+	systemctl start filebeat
+}
+stopfilebeat(){
+	systemctl stop filebeat
+}
+statusfilebeat(){
+	systemctl status filebeat
 }
 echo MENU
 
@@ -121,19 +129,17 @@ for i in ${OPTION[@]} ; do
                 elasticsearch)
                         echo -e $blue elastisearch $restore
                         if [ $action = "start" ] ; then
-                        	cd $epath
-                        	nohup ./bin -d -p es.pid & 
+                        	#cd $epath
+                        	#nohup ./bin -d -p es.pid & 
                         	startelastic
-                        	statuselastic
                        
                         elif [ $action = "stop" ] ; then
                         	stopelastic
-                        	statuselastic
                         
                     	elif [ $action = "status" ]; then
                     		statuselastic
                     		code=$?
-                    		echo $code
+                    		#echo $code
                     		if [ $code -eq 1 ]; then
                     			echo -e "Elasticsearch Its" $verde"running"
                     		else
@@ -141,7 +147,7 @@ for i in ${OPTION[@]} ; do
                     		fi
                     		
                     	elif [ $action = "restart" ]; then
-                    		stopelastic && startelastic &&  statuselastic
+                    		stopelastic && startelastic
                     	fi
 
 
@@ -167,7 +173,27 @@ for i in ${OPTION[@]} ; do
 							;;
 						esac
                 ;;
-
+  				filebeat)
+                        echo -e $blue filebeat $restore
+                          case $action in
+                        	start)
+								startfilebeat
+								statusfilebeat
+							;;
+							stop)
+								stopfilebeat
+								statusfilebeat
+							;;
+							status)
+								statusfilebeat
+							;;
+							restart)
+								stopfilebeat
+								startfilebeat
+								statusfilebeat
+							;;
+						esac
+                ;;
                 *)
                         echo ha introducido un valor incorrecto
                 ;;
